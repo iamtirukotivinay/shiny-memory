@@ -1,0 +1,1138 @@
+SOFTWARE ENGINEERING LAB EXTERNAL
+COMPLETE COMMAND CHEAT SHEET
+Git | Maven | Docker | Docker Compose | Kubernetes | Nagios | Ngrok | AWS EC2 | Ubuntu
+
+Purpose:
+A start-to-finish practical reference for common SE Lab External tasks. Commands are grouped by tool and ordered from setup to verification. Replace every value written as <PLACEHOLDER> with your own value. Do not type the angle brackets.
+
+IMPORTANT TERMINAL NOTE
+-----------------------
+1. Git, Maven, Docker and Minikube commands can be run in Windows PowerShell/Command Prompt when the tools are installed, or in Ubuntu/Linux terminal.
+2. Commands beginning with sudo are for Ubuntu/Linux terminals, including an Ubuntu EC2 SSH session.
+3. YAML and Dockerfile examples must be saved in files with the exact filenames shown.
+4. Keep Docker Desktop / Docker Engine running before Docker or Minikube tasks.
+5. For a Maven application, inspect pom.xml to know whether it creates a JAR or WAR and which Java version it needs.
+6. Never expose passwords, private keys, GitHub tokens or Docker Hub access tokens in public source code.
+
+============================================================
+1. GIT AND GITHUB - FROM INITIALIZATION TO PUSH
+============================================================
+
+A. CHECK INSTALLATION AND CONFIGURE USER
+----------------------------------------
+git --version
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+git config --global --list
+
+B. CREATE A NEW LOCAL REPOSITORY
+--------------------------------
+mkdir SE-Git-Project
+cd SE-Git-Project
+git init
+git status
+
+Create/edit project files, then:
+git add .
+git status
+git commit -m "Initial commit"
+git log --oneline
+
+C. CONNECT LOCAL REPOSITORY TO GITHUB
+-------------------------------------
+Create an EMPTY repository on GitHub first. Then:
+git branch -M main
+git remote add origin https://github.com/<USERNAME>/<REPOSITORY>.git
+git remote -v
+git push -u origin main
+
+For later commits:
+git add .
+git commit -m "Updated project"
+git push origin main
+
+D. CLONE AN EXISTING GITHUB REPOSITORY
+--------------------------------------
+git clone https://github.com/<USERNAME>/<REPOSITORY>.git
+cd <REPOSITORY>
+git status
+git remote -v
+
+E. BASIC STATUS / ADD / COMMIT / PUSH
+-------------------------------------
+git status
+git add <filename>
+git add .
+git commit -m "Meaningful commit message"
+git push origin main
+
+F. VIEW CHANGES - DIFF
+----------------------
+git diff                     # Unstaged changes
+git diff --staged            # Changes staged for commit
+git diff <branch1> <branch2>  # Compare branches
+
+G. VIEW COMMIT HISTORY - LOG
+----------------------------
+git log
+git log --oneline
+git log --oneline --graph --all
+git show <COMMIT_ID>
+
+H. CREATE AND SWITCH BRANCHES
+-----------------------------
+git branch                         # List local branches
+git branch <feature-branch>        # Create branch
+git switch <feature-branch>        # Switch branch
+git switch -c <feature-branch>     # Create and switch
+
+Older equivalent:
+git checkout -b <feature-branch>
+
+I. MERGE A BRANCH
+-----------------
+git switch main
+git pull origin main
+git merge <feature-branch>
+git push origin main
+
+J. FETCH AND PULL
+-----------------
+git fetch origin             # Download remote updates; does not merge
+git branch -r                # List remote branches
+git log --oneline HEAD..origin/main
+git pull origin main         # Fetch + integrate remote changes
+
+K. REBASE
+---------
+git switch <feature-branch>
+git fetch origin
+git rebase origin/main
+
+If conflicts occur:
+1. Open each conflicted file and resolve conflict markers.
+2. Stage the resolved file(s):
+   git add <filename>
+3. Continue:
+   git rebase --continue
+
+Cancel an unfinished rebase:
+git rebase --abort
+
+L. STASH - TEMPORARILY SAVE UNCOMMITTED CHANGES
+------------------------------------------------
+git stash
+git stash list
+git stash show -p
+git stash apply
+git stash pop
+git stash drop
+
+M. REVERT - SAFELY UNDO A COMMIT WITH A NEW COMMIT
+--------------------------------------------------
+git log --oneline
+git revert <COMMIT_ID>
+git push origin main
+
+N. RESET - MOVE THE CURRENT BRANCH POINTER
+------------------------------------------
+git reset --soft HEAD~1    # Undo last commit; keep changes staged
+git reset --mixed HEAD~1   # Undo last commit; keep changes unstaged (default)
+git reset --hard HEAD~1    # Undo commit AND discard tracked working changes
+
+WARNING: reset --hard can permanently discard local work. Do not use unless the task explicitly requires it and the changes can be lost.
+
+O. REMOVE / RENAME / INSPECT REMOTE
+----------------------------------
+git remote -v
+git remote add origin <REPOSITORY_URL>
+git remote set-url origin <REPOSITORY_URL>
+git remote remove origin
+
+P. COMMON GIT CONFLICT FLOW
+---------------------------
+git status
+# Edit conflicted files and remove <<<<<<<, =======, >>>>>>> markers
+git add .
+git commit -m "Resolve merge conflict"
+
+For a rebase conflict use: git rebase --continue (not a normal merge commit).
+
+Q. USEFUL GIT COMMANDS
+----------------------
+git branch -a
+git tag
+git stash list
+git clean -n       # Preview untracked files that clean would remove
+git clean -f       # Delete untracked files; use carefully
+
+============================================================
+2. MAVEN - CREATE, BUILD, TEST AND PACKAGE JAVA PROJECT
+============================================================
+
+A. VERIFY JAVA AND MAVEN
+------------------------
+java -version
+javac -version
+mvn -version
+
+B. CREATE A SIMPLE MAVEN JAVA PROJECT FROM TERMINAL
+---------------------------------------------------
+mvn archetype:generate -DgroupId=com.example -DartifactId=lab-external -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+cd lab-external
+
+This creates a basic Maven Java project. Eclipse alternative:
+File > New > Maven Project > Create a simple project > enter Group ID and Artifact ID > Finish.
+
+C. IMPORTANT MAVEN PROJECT FILES
+--------------------------------
+pom.xml                  # Maven project configuration and dependencies
+src/main/java/           # Application source code
+src/test/java/           # Test source code
+target/                  # Generated build output
+
+D. MAIN MAVEN COMMANDS - RUN FROM THE FOLDER CONTAINING pom.xml
+---------------------------------------------------------------
+mvn validate             # Validate project
+mvn clean                # Remove previous build output (target/)
+mvn compile              # Compile main source code
+mvn test                  # Run tests
+mvn package               # Create JAR or WAR package
+mvn verify                # Run verification lifecycle
+mvn install               # Install artifact into local Maven repository
+mvn clean package         # Clean and package
+mvn clean install         # Clean, build, test, package and install
+mvn dependency:tree       # Show dependency tree
+mvn help:effective-pom    # Show effective POM
+
+Skip tests only if specifically needed:
+mvn clean package -DskipTests
+
+Skip test compilation and execution (use only when specifically required):
+mvn clean package -Dmaven.test.skip=true
+
+E. RUN A JAR
+------------
+java -jar target/<APP_NAME>.jar
+
+F. CHECK GENERATED OUTPUT
+-------------------------
+Windows:
+dir target
+
+Ubuntu/Linux:
+ls -lh target/
+
+G. MAVEN WEB APPLICATION (WAR)
+------------------------------
+mvn clean package
+
+Generated WAR is usually located inside:
+target/<APP_NAME>.war
+
+Deploy the WAR to a compatible Tomcat webapps directory. Check the project's Java and Servlet/Jakarta version before choosing Tomcat 9 or Tomcat 10+.
+
+H. COMMON MAVEN PROBLEMS
+------------------------
+mvn -U clean package      # Force snapshot/dependency updates
+mvn -e test               # Show detailed error information
+mvn -X package            # Debug output; very verbose
+
+============================================================
+3. DOCKER - IMAGE, CONTAINER, DOCKERFILE AND DOCKER HUB
+============================================================
+
+A. VERIFY DOCKER
+----------------
+docker --version
+docker info
+docker compose version
+
+On Windows, start Docker Desktop and wait until the engine is running.
+On Ubuntu, if Docker Engine is installed:
+sudo systemctl enable --now docker
+sudo systemctl status docker
+
+B. BASIC DOCKER COMMANDS
+------------------------
+docker pull nginx
+docker images
+docker run hello-world
+docker run -d --name web1 -p 8080:80 nginx
+docker ps
+docker ps -a
+docker logs web1
+docker logs -f web1
+docker exec -it web1 /bin/sh
+docker stop web1
+docker start web1
+docker restart web1
+docker rm -f web1
+docker rmi nginx
+
+Port mapping format:
+-p HOST_PORT:CONTAINER_PORT
+Example:
+-p 8080:8080
+
+C. CREATE A DOCKERFILE FOR A MAVEN EXECUTABLE JAR PROJECT
+---------------------------------------------------------
+From the project root (the folder containing pom.xml), create a file named exactly: Dockerfile
+
+Example multi-stage Dockerfile for a Java 17 Maven application that creates an executable JAR:
+
+----- BEGIN Dockerfile (JAR) -----
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B clean package -DskipTests
+
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+----- END Dockerfile (JAR) -----
+
+IMPORTANT:
+- This example expects an executable JAR (for example, a Spring Boot JAR).
+- Change Java 17 to the version required by pom.xml if necessary.
+- If the project creates a WAR, use the WAR example below instead.
+
+D. ALTERNATIVE DOCKERFILE FOR A TOMCAT WAR PROJECT
+--------------------------------------------------
+Create Dockerfile in the project root:
+
+----- BEGIN Dockerfile (WAR) -----
+FROM tomcat:9.0
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY target/*.war /usr/local/tomcat/webapps/ROOT.war
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
+----- END Dockerfile (WAR) -----
+
+Use a Tomcat version compatible with the project's Servlet API. A legacy javax.servlet application commonly requires Tomcat 9; Jakarta-based applications may require Tomcat 10 or later.
+
+E. BUILD, RUN AND VERIFY YOUR IMAGE
+-----------------------------------
+# Build from the folder containing Dockerfile
+docker build -t <DOCKERHUB_USERNAME>/<IMAGE_NAME>:v1 .
+
+# List images
+docker images
+
+# Run container
+docker run -d --name <CONTAINER_NAME> -p 8080:8080 <DOCKERHUB_USERNAME>/<IMAGE_NAME>:v1
+
+# Verify
+docker ps
+docker logs <CONTAINER_NAME>
+
+# Test from browser or terminal
+curl http://localhost:8080
+
+# Stop and remove
+docker stop <CONTAINER_NAME>
+docker rm <CONTAINER_NAME>
+
+F. PUSH IMAGE TO DOCKER HUB
+---------------------------
+docker login
+# Enter Docker Hub username and password/access token when prompted.
+
+docker tag <LOCAL_IMAGE>:v1 <DOCKERHUB_USERNAME>/<IMAGE_NAME>:v1
+docker push <DOCKERHUB_USERNAME>/<IMAGE_NAME>:v1
+
+# Optional latest tag
+docker tag <LOCAL_IMAGE>:v1 <DOCKERHUB_USERNAME>/<IMAGE_NAME>:latest
+docker push <DOCKERHUB_USERNAME>/<IMAGE_NAME>:latest
+
+G. OTHER USEFUL DOCKER COMMANDS
+-------------------------------
+docker inspect <CONTAINER_NAME>
+docker stats
+docker top <CONTAINER_NAME>
+docker network ls
+docker volume ls
+docker system df
+docker system prune       # Removes unused Docker data; review before use
+docker builder prune      # Removes unused build cache
+
+============================================================
+4. DOCKER COMPOSE - WEB APPLICATION + MYSQL
+============================================================
+
+A. CREATE PROJECT FOLDER AND FILE
+---------------------------------
+mkdir SE-Compose
+cd SE-Compose
+
+Create a file named docker-compose.yml (or compose.yaml). Paste the example below.
+
+B. EXAMPLE docker-compose.yml
+-----------------------------
+This example starts a Docker Hub web image and a MySQL database. Replace the web image with the image required by the practical. The web application must be programmed/configured to read the DB_* environment variables shown here.
+
+----- BEGIN docker-compose.yml -----
+services:
+  web:
+    image: <DOCKERHUB_USERNAME>/<WEB_IMAGE>:latest
+    container_name: web-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: college_db
+      DB_USER: appuser
+      DB_PASSWORD: app123
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: college_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: app123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+----- END docker-compose.yml -----
+
+IMPORTANT NOTES:
+- Replace <DOCKERHUB_USERNAME>/<WEB_IMAGE> with a real image name. Do not leave angle brackets in the YAML.
+- The application connects to the database host "db", not "localhost". Compose service names work as DNS names on the Compose network.
+- The DB_* environment variable names are examples. The actual web image must support those names or use the variable names documented by its developer.
+- This is a lab example. Use strong secrets and avoid exposing MySQL port 3306 publicly in real deployments.
+
+C. VALIDATE AND START
+---------------------
+docker compose config
+docker compose pull
+docker compose up -d
+docker compose ps
+docker compose logs
+docker compose logs web
+docker compose logs db
+
+D. VERIFY APPLICATION AND DATABASE
+-----------------------------------
+Open in browser:
+http://localhost:8080
+
+Commands:
+docker compose ps
+docker compose top
+docker compose exec db mysql -uappuser -p college_db
+
+At the MySQL prompt:
+SHOW DATABASES;
+SHOW TABLES;
+EXIT;
+
+E. IMPORTANT DOCKER COMPOSE COMMANDS
+------------------------------------
+docker compose up -d             # Create/start all services in background
+docker compose up -d --build     # Build/rebuild and start services
+docker compose stop              # Stop services; keep containers
+docker compose start             # Start existing stopped containers
+docker compose restart           # Restart services
+docker compose restart web       # Restart only web service
+docker compose stop web          # Stop only web service
+docker compose logs -f           # Follow logs
+docker compose ps                # List services/containers
+docker compose exec web sh       # Open shell inside web container
+docker compose down               # Stop/remove containers and default network
+docker compose down -v            # Also remove named volumes; database data is deleted
+
+F. EXAM SCENARIO COMMANDS
+-------------------------
+Temporarily stop all services:
+docker compose stop
+
+Start the same stopped containers:
+docker compose start
+
+Stop and remove containers and default network:
+docker compose down
+
+Apply updated compose configuration:
+docker compose up -d
+
+Stop only backend service:
+docker compose stop backend
+
+============================================================
+5. KUBERNETES AND MINIKUBE - DEPLOY, EXPOSE, SCALE
+============================================================
+
+A. VERIFY TOOLS
+---------------
+minikube version
+kubectl version --client
+docker --version
+
+B. START MINIKUBE
+-----------------
+minikube start --driver=docker
+minikube status
+kubectl get nodes
+kubectl get pods -A
+
+If kubectl is not installed locally, use:
+minikube kubectl -- get nodes
+
+C. CREATE DEPLOYMENT YAML
+-------------------------
+Create a file named deployment.yaml. Change the image name to your Docker Hub image.
+
+----- BEGIN deployment.yaml -----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - name: web-container
+          image: <DOCKERHUB_USERNAME>/<IMAGE_NAME>:latest
+          ports:
+            - containerPort: 8080
+----- END deployment.yaml -----
+
+D. CREATE NODEPORT SERVICE YAML
+-------------------------------
+Create a file named service.yaml:
+
+----- BEGIN service.yaml -----
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: NodePort
+  selector:
+    app: webapp
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080
+----- END service.yaml -----
+
+NodePort valid default range: 30000-32767.
+The Service selector "app: webapp" must match the Pod label in deployment.yaml.
+
+E. APPLY AND VERIFY
+-------------------
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl get deployments
+kubectl get services
+kubectl get pods
+kubectl get pods -o wide
+kubectl rollout status deployment/web-deployment
+kubectl describe deployment web-deployment
+kubectl describe service web-service
+
+F. SCALE TO FOUR REPLICAS
+-------------------------
+kubectl scale deployment web-deployment --replicas=4
+kubectl get deployments
+kubectl get pods
+kubectl get pods -o wide
+
+G. ACCESS APPLICATION
+---------------------
+minikube service web-service --url
+
+Open the URL printed by Minikube in the browser.
+Alternative:
+minikube service web-service
+
+H. IMPORTANT KUBECTL COMMANDS
+-----------------------------
+kubectl get nodes
+kubectl get pods
+kubectl get pods -A
+kubectl get deployments
+kubectl get services
+kubectl get all
+kubectl describe pod <POD_NAME>
+kubectl describe service web-service
+kubectl logs <POD_NAME>
+kubectl logs -f <POD_NAME>
+kubectl exec -it <POD_NAME> -- sh
+kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl scale deployment web-deployment --replicas=4
+kubectl rollout status deployment/web-deployment
+kubectl rollout history deployment/web-deployment
+kubectl rollout undo deployment/web-deployment
+
+I. TROUBLESHOOTING
+------------------
+# Pod details and events
+kubectl get pods
+kubectl describe pod <POD_NAME>
+kubectl get events --sort-by=.metadata.creationTimestamp
+
+# Application logs
+kubectl logs <POD_NAME>
+
+# Service selector/endpoints
+kubectl get pods --show-labels
+kubectl describe service web-service
+kubectl get endpoints web-service
+
+If ENDPOINTS shows <none>, check that the Service selector matches the Pod labels and Pods are Ready.
+If ImagePullBackOff occurs, check image name/tag, Docker Hub visibility and image pull credentials.
+If CrashLoopBackOff occurs, inspect Pod description and application logs.
+
+J. DELETE RESOURCES / STOP MINIKUBE
+-----------------------------------
+kubectl delete -f service.yaml
+kubectl delete -f deployment.yaml
+kubectl get all
+minikube stop
+
+Delete the entire local Minikube cluster only when required:
+minikube delete
+
+============================================================
+6. NAGIOS CORE - INSTALL AND MONITOR ON UBUNTU
+============================================================
+
+A. INSTALL NAGIOS CORE PACKAGE
+------------------------------
+The following is the Ubuntu package-based route. Package setup and Apache configuration can vary slightly by Ubuntu release.
+
+sudo apt update
+sudo apt install nagios4 nagios-nrpe-plugin
+
+During installation, follow package prompts and set/remember the Nagios web password if requested.
+
+B. CREATE / SET UP NAGIOS WEB USER
+----------------------------------
+Ubuntu's documented Nagios 4 package uses Digest authentication:
+sudo htdigest -c /etc/nagios4/htdigest.users "Nagios4" nagiosadmin
+
+Use -c only when creating the password file for the first time. Do not use -c when adding another user to an existing file.
+
+C. ENABLE APACHE CONFIGURATION
+------------------------------
+sudo cp /etc/nagios4/apache2.conf /etc/apache2/sites-available/nagios4.conf
+sudo a2ensite nagios4.conf
+sudo systemctl reload apache2
+sudo systemctl reload nagios4
+
+D. VERIFY SERVICES AND CONFIGURATION
+------------------------------------
+sudo systemctl status nagios4
+sudo systemctl status apache2
+sudo nagios4 -v /etc/nagios4/nagios.cfg
+
+If configuration validation reports errors, fix them before restarting:
+sudo systemctl restart nagios4
+sudo systemctl restart apache2
+
+E. OPEN NAGIOS WEB INTERFACE
+----------------------------
+On the same machine:
+http://localhost/nagios4
+
+From another machine:
+http://<NAGIOS_SERVER_IP>/nagios4
+
+If using UFW and remote HTTP access is required:
+sudo ufw allow Apache
+sudo ufw status
+
+Also allow TCP port 80 in the cloud/network firewall if Nagios runs on EC2.
+
+F. IMPORTANT NAGIOS PATHS
+-------------------------
+Main configuration:       /etc/nagios4/nagios.cfg
+Custom configuration:     /etc/nagios4/conf.d/
+Plugin configuration:     /etc/nagios-plugins/config/
+Remote NRPE configuration: /etc/nagios/nrpe.cfg (on monitored host)
+Apache configuration:     /etc/nagios4/apache2.conf
+Nagios CGI permissions:   /etc/nagios4/cgi.cfg
+
+G. SERVICE CONTROL COMMANDS
+---------------------------
+sudo systemctl start nagios4
+sudo systemctl stop nagios4
+sudo systemctl restart nagios4
+sudo systemctl reload nagios4
+sudo systemctl status nagios4
+
+sudo systemctl start apache2
+sudo systemctl restart apache2
+sudo systemctl status apache2
+
+H. COMMON NAGIOS PLUGIN CHECKS
+------------------------------
+List plugins:
+ls /usr/lib/nagios/plugins/
+
+Check plugin help:
+/usr/lib/nagios/plugins/check_ping -h
+/usr/lib/nagios/plugins/check_http -h
+/usr/lib/nagios/plugins/check_disk -h
+
+Example manual checks:
+/usr/lib/nagios/plugins/check_ping -H 127.0.0.1 -w 100.0,20% -c 500.0,60%
+/usr/lib/nagios/plugins/check_http -H localhost
+/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /
+
+I. ADD A BASIC CUSTOM HOST (CHECK INCLUDED CONFIGURATION FIRST)
+---------------------------------------------------------------
+1. Confirm that /etc/nagios4/nagios.cfg includes the custom directory:
+   grep -n "conf.d" /etc/nagios4/nagios.cfg
+
+2. Create a configuration file:
+   sudo nano /etc/nagios4/conf.d/lab-host.cfg
+
+3. Example host definition (generic-host template must exist in your installed configuration):
+
+define host {
+    use         generic-host
+    host_name   lab-ubuntu
+    alias       Lab Ubuntu Server
+    address     <TARGET_SERVER_IP>
+}
+
+4. Validate, then restart:
+   sudo nagios4 -v /etc/nagios4/nagios.cfg
+   sudo systemctl restart nagios4
+
+J. OPTIONAL: INSTALL NRPE ON A REMOTE UBUNTU MACHINE
+---------------------------------------------------
+On the REMOTE machine being monitored:
+sudo apt update
+sudo apt install nagios-nrpe-server
+sudo systemctl enable --now nagios-nrpe-server
+sudo systemctl status nagios-nrpe-server
+
+Edit NRPE configuration if required:
+sudo nano /etc/nagios/nrpe.cfg
+
+Set allowed_hosts to include localhost and the Nagios server IP, following the file's existing syntax. Then:
+sudo systemctl restart nagios-nrpe-server
+
+On Nagios server, test NRPE connectivity (after network access is allowed):
+/usr/lib/nagios/plugins/check_nrpe -H <REMOTE_SERVER_IP>
+
+Nagios/Nrpe deployments require correct firewall rules and matching allowed_hosts settings. Do not expose NRPE port 5666 to the entire internet.
+
+============================================================
+7. NGROK - EXPOSE LOCALHOST TO THE INTERNET
+============================================================
+
+A. INSTALL AND VERIFY
+---------------------
+Install the ngrok agent using the official ngrok download page for Windows/Linux/macOS.
+
+ngrok version
+ngrok help
+
+B. ADD YOUR AUTH TOKEN
+----------------------
+Sign in to your ngrok account and copy your own authtoken from the dashboard. Then:
+ngrok config add-authtoken <YOUR_NGROK_AUTHTOKEN>
+
+Do not share or publish your authtoken.
+
+C. START A LOCAL WEB APP FIRST
+------------------------------
+Example: if your application runs locally on port 8080, verify it first:
+http://localhost:8080
+
+D. CREATE HTTP TUNNEL
+---------------------
+ngrok http 8080
+
+For a web app on port 3000:
+ngrok http 3000
+
+For a web app on port 80:
+ngrok http 80
+
+ngrok displays a public HTTPS forwarding URL. Open that URL from another device to test access.
+
+E. OTHER USEFUL NGROK COMMANDS
+------------------------------
+ngrok version
+ngrok help
+ngrok config check
+ngrok config add-authtoken <TOKEN>
+ngrok http 8080
+ngrok tcp 22
+ngrok start <ENDPOINT_NAME>
+ngrok update
+
+TCP tunnels may require an account/plan that supports the requested endpoint. Do not expose SSH or database ports unnecessarily.
+
+F. STOP NGROK
+-------------
+Press CTRL + C in the terminal where ngrok is running.
+
+G. COMMON TROUBLESHOOTING
+-------------------------
+1. Confirm the local application is running.
+2. Confirm the local port is correct.
+3. Confirm the authtoken was added successfully.
+4. Keep the ngrok terminal/session running while testing.
+5. If a local firewall blocks the application, allow the required local port.
+
+============================================================
+8. AWS EC2 - LAUNCH, SSH, UBUNTU AND DEPLOYMENT
+============================================================
+
+A. LAUNCH EC2 FROM AWS CONSOLE
+------------------------------
+1. Open https://console.aws.amazon.com/ec2/
+2. Choose the required AWS Region.
+3. Select Launch instance.
+4. Enter an instance name.
+5. Select the required AMI (for example, Ubuntu Server).
+6. Select an instance type allowed by the lab/account.
+7. Create or select a key pair and download the .pem file.
+8. Configure a Security Group.
+9. Launch the instance and wait until it is Running and status checks pass.
+10. Copy the Public IPv4 address.
+
+B. COMMON EC2 SECURITY GROUP INBOUND PORTS
+------------------------------------------
+SSH        TCP 22     Source: Your administrator IP (/32)
+HTTP       TCP 80     Source: As required for public web access
+HTTPS      TCP 443    Source: As required for public HTTPS access
+Tomcat     TCP 8080   Source: Restrict to lab/client IP where possible
+Nagios     TCP 80     Source: Restrict to required users/network
+
+Do not expose MySQL TCP 3306 publicly. Add only the ports needed for the practical.
+
+C. CONNECT TO UBUNTU EC2 USING SSH
+----------------------------------
+From Linux/macOS/WSL terminal, in the folder containing your key:
+chmod 400 <KEY_NAME>.pem
+ssh -i "<KEY_NAME>.pem" ubuntu@<EC2_PUBLIC_IP>
+
+Windows PowerShell example:
+ssh -i .\<KEY_NAME>.pem ubuntu@<EC2_PUBLIC_IP>
+
+If Windows reports that the private key permissions are too open, restrict the key file ACL (run in PowerShell from the key folder):
+icacls .\<KEY_NAME>.pem /inheritance:r
+icacls .\<KEY_NAME>.pem /grant:r "$($env:USERNAME):(R)"
+
+If the AMI is Amazon Linux, the SSH username is commonly ec2-user, not ubuntu.
+
+D. BASIC UBUNTU COMMANDS (AFTER SSH LOGIN)
+------------------------------------------
+pwd                         # Current directory
+ls                          # List files
+ls -la                      # Include hidden files
+cd <DIRECTORY>              # Change directory
+cd ..                       # Parent directory
+cd ~                        # Home directory
+mkdir <FOLDER>              # Create folder
+touch <FILE>                # Create file
+nano <FILE>                 # Edit file
+cat <FILE>                  # Display file
+less <FILE>                 # Read file page-by-page
+cp <SOURCE> <DESTINATION>   # Copy
+mv <SOURCE> <DESTINATION>   # Move/rename
+rm <FILE>                   # Delete file
+rmdir <FOLDER>              # Remove empty folder
+clear                       # Clear terminal
+whoami                      # Current user
+hostname                    # Host name
+date                        # Current date/time
+history                     # Command history
+
+E. UPDATE UBUNTU AND INSTALL TOOLS
+----------------------------------
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y git curl wget unzip nano
+
+Install Java and Maven (select versions required by project):
+sudo apt install -y openjdk-17-jdk maven
+java -version
+javac -version
+mvn -version
+git --version
+
+F. NETWORK / PROCESS / DISK COMMANDS
+------------------------------------
+ip addr
+ip route
+hostname -I
+curl -I http://localhost:8080
+ss -tulpn
+ps aux
+top
+df -h
+du -sh <FOLDER>
+free -h
+
+G. UBUNTU SERVICE COMMANDS
+--------------------------
+sudo systemctl status <SERVICE>
+sudo systemctl start <SERVICE>
+sudo systemctl stop <SERVICE>
+sudo systemctl restart <SERVICE>
+sudo systemctl enable <SERVICE>
+sudo systemctl disable <SERVICE>
+sudo journalctl -u <SERVICE> -n 100 --no-pager
+
+H. FIREWALL COMMANDS (UFW)
+--------------------------
+sudo ufw status
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 8080/tcp
+sudo ufw enable
+sudo ufw reload
+
+Before enabling UFW on a remote EC2 server, allow SSH port 22 first or you may lock yourself out. AWS Security Groups must also permit the traffic.
+
+I. CLONE AND BUILD MAVEN WEB APPLICATION ON EC2
+-----------------------------------------------
+git clone <GITHUB_REPOSITORY_URL>
+cd <PROJECT_FOLDER>
+git status
+mvn clean test package
+ls -lh target/
+
+J. TOMCAT INSTALLATION - CHECK AVAILABLE VERSION FIRST
+------------------------------------------------------
+Tomcat package name and version vary with Ubuntu release. Search available versions:
+apt-cache search '^tomcat[0-9]'
+
+Install the version compatible with the application's Servlet/Jakarta API. Examples (use the version available for your OS):
+sudo apt install tomcat10
+
+For a legacy project that specifically requires Tomcat 9, use a compatible Tomcat 9 distribution/package if available rather than deploying it blindly to Tomcat 10+.
+
+Check service names after installation:
+systemctl list-unit-files | grep -i tomcat
+
+Example for a Tomcat 10 package:
+sudo systemctl enable --now tomcat10
+sudo systemctl status tomcat10
+
+Common packaged webapps directory for Tomcat 10:
+/var/lib/tomcat10/webapps/
+
+For a Tomcat 9 package, the directory is commonly:
+/var/lib/tomcat9/webapps/
+
+K. DEPLOY WAR TO TOMCAT
+-----------------------
+First build the WAR:
+mvn clean package
+ls target/*.war
+
+Example for Tomcat 10 package (adjust version/path to actual installation):
+sudo cp target/<APP_NAME>.war /var/lib/tomcat10/webapps/
+sudo systemctl restart tomcat10
+
+Example for Tomcat 9 package:
+sudo cp target/<APP_NAME>.war /var/lib/tomcat9/webapps/
+sudo systemctl restart tomcat9
+
+Check service status and logs:
+sudo systemctl status tomcat10
+sudo journalctl -u tomcat10 -n 100 --no-pager
+
+Access from browser, using actual WAR context path:
+http://<EC2_PUBLIC_IP>:8080/<APP_NAME>/
+
+If the WAR was deployed as ROOT.war, use:
+http://<EC2_PUBLIC_IP>:8080/
+
+Ensure the EC2 Security Group allows TCP 8080 and the application is listening. If Tomcat is behind port 80 reverse proxy, configure that separately.
+
+L. COPY FILE FROM YOUR LOCAL PC TO EC2 (SCP)
+--------------------------------------------
+Run on your LOCAL computer, not inside EC2:
+scp -i <KEY_NAME>.pem target/<APP_NAME>.war ubuntu@<EC2_PUBLIC_IP>:/tmp/
+
+Then SSH into EC2 and copy the WAR into the correct Tomcat webapps folder.
+
+M. CHECK PUBLIC ACCESS
+----------------------
+On EC2:
+curl -I http://localhost:8080/<APP_CONTEXT>/
+
+From your own browser:
+http://<EC2_PUBLIC_IP>:8080/<APP_CONTEXT>/
+
+Check these if not accessible:
+1. EC2 instance is running and has a Public IPv4 address.
+2. Security Group allows inbound TCP 8080 (or the port used).
+3. Application/Tomcat service is active.
+4. Application is listening on the expected port.
+5. Subnet route table and Internet Gateway permit internet access.
+6. OS firewall is not blocking the port.
+
+N. STOP / START / TERMINATE EC2
+-------------------------------
+Use AWS Console or AWS CLI if configured.
+Stop: powers off the instance; EBS-backed data is generally retained.
+Start: starts the stopped instance; public IPv4 may change unless using Elastic IP.
+Terminate: deletes the instance; EBS volumes configured for deletion on termination may also be deleted.
+
+============================================================
+9. QUICK EXAM SCENARIO COMMANDS
+============================================================
+
+GIT
+---
+Show unstaged changes:       git diff
+Show commit history:         git log --oneline
+Save temporary changes:      git stash
+Restore stashed changes:     git stash pop
+Download remote updates:     git fetch origin
+Undo commit safely:          git revert <COMMIT_ID>
+Move branch pointer:         git reset --soft HEAD~1
+
+MAVEN
+-----
+Clean project:               mvn clean
+Compile:                     mvn compile
+Run tests:                   mvn test
+Create JAR/WAR:              mvn package
+Full clean build:            mvn clean package
+
+DOCKER
+------
+Build image:                 docker build -t <IMAGE_NAME> .
+Run container:               docker run -d -p 8080:8080 <IMAGE_NAME>
+List running containers:     docker ps
+View logs:                   docker logs <CONTAINER_NAME>
+Push image:                  docker push <USERNAME>/<IMAGE_NAME>:latest
+
+DOCKER COMPOSE
+--------------
+Start all:                   docker compose up -d
+Stop without removing:       docker compose stop
+Start stopped containers:    docker compose start
+Stop/remove containers:      docker compose down
+Stop one service:             docker compose stop <SERVICE_NAME>
+Apply changed configuration: docker compose up -d
+
+KUBERNETES
+----------
+Start local cluster:         minikube start --driver=docker
+List nodes:                  kubectl get nodes
+Apply YAML:                  kubectl apply -f deployment.yaml
+List Pods:                   kubectl get pods
+Scale to four:               kubectl scale deployment <NAME> --replicas=4
+List Services:               kubectl get services
+Access Minikube service:     minikube service <SERVICE_NAME> --url
+Delete Deployment:           kubectl delete deployment <NAME>
+Delete Service:              kubectl delete service <NAME>
+
+NAGIOS
+------
+Install:                     sudo apt install nagios4 nagios-nrpe-plugin
+Validate config:             sudo nagios4 -v /etc/nagios4/nagios.cfg
+Start service:               sudo systemctl start nagios4
+Restart service:             sudo systemctl restart nagios4
+Check service:               sudo systemctl status nagios4
+
+NGROK
+-----
+Add auth token:              ngrok config add-authtoken <TOKEN>
+Expose localhost:8080:       ngrok http 8080
+Expose localhost:3000:       ngrok http 3000
+Stop tunnel:                 CTRL+C
+
+AWS / UBUNTU
+------------
+Connect:                     ssh -i key.pem ubuntu@<PUBLIC_IP>
+Update packages:             sudo apt update
+Install Java:                sudo apt install -y openjdk-17-jdk
+Install Maven:               sudo apt install -y maven
+Clone source:                git clone <REPOSITORY_URL>
+Build web app:               mvn clean package
+Check ports:                 ss -tulpn
+Check service:               sudo systemctl status <SERVICE>
+
+============================================================
+10. LAST-MINUTE CHECKLIST
+============================================================
+
+[ ] I can initialize, clone, commit and push a Git repository.
+[ ] I know diff, log, stash, fetch, rebase, revert and reset.
+[ ] I can run Maven clean, compile, test, package and install.
+[ ] I can identify whether Maven creates a JAR or WAR.
+[ ] I can write a Dockerfile for an executable JAR or WAR.
+[ ] I can build, run, inspect and push a Docker image.
+[ ] I can write a docker-compose.yml with web and MySQL services.
+[ ] I know Compose up, stop, start and down.
+[ ] I can start Minikube, apply Deployment and Service YAML, scale to four replicas and verify Pods.
+[ ] I can install and validate Nagios and open its web interface.
+[ ] I can add an ngrok authtoken and expose localhost with ngrok http.
+[ ] I can SSH into Ubuntu EC2, install Java/Maven, build a WAR and deploy it to compatible Tomcat.
+[ ] I know which ports must be permitted in AWS Security Groups.
+
+============================================================
+OFFICIAL REFERENCE LINKS
+============================================================
+Git documentation:
+https://git-scm.com/docs
+
+Maven documentation:
+https://maven.apache.org/guides/index.html
+
+Docker CLI:
+https://docs.docker.com/reference/cli/docker/
+
+Docker Compose CLI:
+https://docs.docker.com/reference/cli/docker/compose/
+
+Kubernetes kubectl:
+https://kubernetes.io/docs/reference/kubectl/
+
+Minikube start:
+https://minikube.sigs.k8s.io/docs/start/
+
+Ubuntu - Install and configure Nagios Core 4:
+https://ubuntu.com/server/docs/how-to/observability/install-nagios/
+
+ngrok getting started:
+https://ngrok.com/docs/start
+
+AWS EC2 User Guide:
+https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html
+
+Ubuntu Server documentation:
+https://ubuntu.com/server/docs
+
+END OF CHEAT SHEET
